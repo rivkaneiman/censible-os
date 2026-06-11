@@ -408,6 +408,7 @@ export default function AdminPendingQueue() {
   const [decided, setDecided] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
+  const [denyReason, setDenyReason] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [decidedSearch, setDecidedSearch] = useState("");
 
@@ -421,11 +422,22 @@ export default function AdminPendingQueue() {
   const handleDecision = (action) => {
     if (!selected) return;
     const remaining = pending.filter(r => r.id !== selected.id);
-    setDecided([...decided, { ...selected, decision: action, decidedOn: "Jun 1" }]);
+    setDecided([...decided, {
+      ...selected,
+      decision: action,
+      decidedOn: "Jun 1",
+      ...(action === "deny" && denyReason.trim() ? { denyReason: denyReason.trim() } : {})
+    }]);
     setPending(remaining);
     setSelectedId(remaining.length > 0 ? remaining[0].id : null);
     setConfirmAction(null);
+    setDenyReason("");
     setIsEditing(false);
+  };
+
+  const closeConfirm = () => {
+    setConfirmAction(null);
+    setDenyReason("");
   };
 
   return (
@@ -543,7 +555,7 @@ export default function AdminPendingQueue() {
 
       {/* Confirmation modal */}
       {confirmAction && selected && (
-        <div className="modal-backdrop" onClick={() => setConfirmAction(null)}>
+        <div className="modal-backdrop" onClick={closeConfirm}>
           <div className="modal-panel" onClick={e => e.stopPropagation()}>
             <h2 className="display-heading" style={{ fontSize: "1.4rem", margin: "0 0 0.5rem" }}>
               {confirmAction === "approve" ? "Approve this request?" : "Deny this request?"}
@@ -553,8 +565,32 @@ export default function AdminPendingQueue() {
               <strong style={{ color: "#231F20", fontWeight: 500 }}>{selected.dates}</strong>
               {" "}({selected.days} day{selected.days === 1 ? "" : "s"}).
             </p>
+            {confirmAction === "deny" && (
+              <div style={{ marginBottom: "1.25rem" }}>
+                <label style={{
+                  display: "block",
+                  fontSize: "0.72rem",
+                  fontWeight: 500,
+                  color: "#807A7B",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  marginBottom: "0.4rem",
+                }}>
+                  Reason <span style={{ textTransform: "none", letterSpacing: 0, color: "#B0ABAC", fontWeight: 400 }}>· optional</span>
+                </label>
+                <textarea
+                  className="input-field"
+                  rows={3}
+                  placeholder="Visible to the employee in their history"
+                  value={denyReason}
+                  onChange={(e) => setDenyReason(e.target.value)}
+                  style={{ resize: "vertical", minHeight: "60px" }}
+                  autoFocus
+                />
+              </div>
+            )}
             <div style={{ display: "flex", gap: "0.6rem", justifyContent: "flex-end" }}>
-              <button className="btn-ghost" onClick={() => setConfirmAction(null)}>Cancel</button>
+              <button className="btn-ghost" onClick={closeConfirm}>Cancel</button>
               {confirmAction === "approve" ? (
                 <button className="btn-primary" onClick={() => handleDecision("approve")}>
                   <Check size={16} style={{ marginRight: "0.3rem" }} />
