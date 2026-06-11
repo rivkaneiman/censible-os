@@ -13,6 +13,16 @@ async function UserDetails() {
     redirect("/auth/login");
   }
 
+  // --- allowlist gate: only emails in the employees table get in ---
+  const email = data.claims.email as string | undefined;
+  const { data: allowed } = await supabase.rpc("is_allowed_employee", {
+    check_email: email ?? "",
+  });
+  if (!allowed) {
+    redirect("/not-authorized");
+  }
+  // --- end allowlist gate ---
+
   return JSON.stringify(data.claims, null, 2);
 }
 
